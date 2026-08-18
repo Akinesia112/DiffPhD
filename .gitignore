@@ -1,0 +1,36 @@
+.vscode/
+cpp/build_*/
+CLAUDE.md
+
+# binary media (regenerate locally, do not push)
+*.mp4
+*.gif
+
+# ── RealSim dependency build output ──────────────────────────────────────────
+# oneTBB / GKlib / METIS are built from source by the user (see README Step 3).
+# These are machine-specific binaries: reusing someone else's copy makes the
+# Python extension die with SIGILL inside PyForward.
+RealSim/deps/oneTBB/build/
+RealSim/deps/onetbb_install/
+RealSim/deps/METIS/build/
+RealSim/deps/METIS/GKlib/build/
+RealSim/deps/METIS/GKlib_build/
+RealSim/deps/METIS_install/
+
+# ── local build / generated ──────────────────────────────────────────────────
+cpp/build/
+external/pbrt_build/
+python/py_diff_pd/core/py_diff_pd_core.py
+python/py_diff_pd/core/_py_diff_pd_core.so
+python/py_diff_pd/common/project_path.py
+cpp/core/src/py_diff_pd_core_wrap.cxx
+__pycache__/
+*.pyc
+
+# verification output (regenerate with python/example/verify_install.py)
+python/example/napkin_3d_test/
+
+# run logs (regenerate by re-running the examples)
+*.log
+python/example/0528_noon/
+python/example/plant_3d_pd_log.txt
