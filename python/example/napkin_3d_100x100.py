@@ -23,7 +23,7 @@ if __name__ == '__main__':
     opts = ({ 'max_pd_iter': 5000, 'max_ls_iter': 10, 'abs_tol': 1e-9, 'rel_tol': 1e-4, 'verbose': 0, 'thread_ct': thread_ct,
                 'use_bfgs': 1, 'use_acc': 1, 'use_sparse': 0, 'project_newton': 0,'use_abs': 0},
             { 'max_pd_iter': 5000, 'max_ls_iter': 10, 'abs_tol': 1e-9, 'rel_tol': 1e-4, 'verbose': 1, 'thread_ct': thread_ct,
-                 'use_bfgs': 1, 'use_acc': 1, 'bfgs_history_size': 10, 'project_newton': 0, 'use_mas': 1 },
+                 'use_bfgs': 1, 'use_acc': 1, 'bfgs_history_size': 10, 'project_newton': 0 },
             { 'max_pd_iter': 5000,'max_cg_iter': 50000,'max_ls_iter': 10, 'abs_tol': 1e-9, 'rel_tol': 1e-4, 'verbose': 0, 'thread_ct': thread_ct,
                  'use_bfgs': 1, 'use_acc': 1,'use_mas': 1, 'bfgs_history_size': 10, 'project_newton': 0 })
 

@@ -1,10 +1,11 @@
 """End-to-end installation check.
 
 Drops a heterogeneous napkin onto a spherical obstacle and runs the same scene
-through two solvers:
+through three solvers:
 
-  pd_eigen_alg_phd         GPU sparse-inverse global solve + NCP contact
-  pd_eigen_pcg_original baseline Projective Dynamics (reference)
+  pd_eigen_alg_phd   GPU sparse-inverse global solve + NCP contact
+  pd_eigen_pcg       the original DiffPD baseline (reference)
+  pd_eigen_mas_pcg   the same baseline with the MAS preconditioner
 
 It exercises the GPU path, the contact solver, heterogeneous materials, the pbrt
 renderer and MP4 export, then reports whether the napkin actually bends on
@@ -12,7 +13,7 @@ contact instead of falling through or exploding.
 
 Usage (from python/example, with the conda env active):
 
-    python napkin_3d_test.py             # both solvers, with rendering
+    python napkin_3d_test.py             # all three solvers, with rendering
     python napkin_3d_test.py --no-vis    # simulation only, much faster
 """
 import sys
@@ -35,17 +36,25 @@ THREAD_CT = 8
 CONTACT_RATIO = 0.4
 CELL_NUMS = (10, 10, 1)
 
-METHODS = ('pd_eigen_alg_phd', 'pd_eigen_pcg_original')
+METHODS = ('pd_eigen_alg_phd', 'pd_eigen_pcg', 'pd_eigen_mas_pcg')
 OPTS = {
     'pd_eigen_alg_phd': {
         'max_pd_iter': 5000, 'max_ls_iter': 10, 'abs_tol': 1e-9, 'rel_tol': 1e-4,
         'verbose': 0, 'thread_ct': THREAD_CT, 'use_bfgs': 1, 'use_acc': 1,
         'use_sparse': 0, 'project_newton': 0, 'use_abs': 0,
     },
-    'pd_eigen_pcg_original': {
+    # Plain DiffPD baseline: no use_mas, so it really is the unpreconditioned
+    # reference the comparison below assumes.
+    'pd_eigen_pcg': {
         'max_pd_iter': 5000, 'max_ls_iter': 10, 'abs_tol': 1e-9, 'rel_tol': 1e-4,
-        'verbose': 0, 'thread_ct': THREAD_CT, 'use_bfgs': 1, 'bfgs_history_size': 10,
-        'project_newton': 0, 'use_abs': 0,
+        'verbose': 0, 'thread_ct': THREAD_CT, 'use_bfgs': 1, 'use_acc': 1,
+        'bfgs_history_size': 10, 'project_newton': 0,
+    },
+    'pd_eigen_mas_pcg': {
+        'max_pd_iter': 5000, 'max_cg_iter': 50000, 'max_ls_iter': 10,
+        'abs_tol': 1e-9, 'rel_tol': 1e-4, 'verbose': 0, 'thread_ct': THREAD_CT,
+        'use_bfgs': 1, 'use_acc': 1, 'use_mas': 1, 'bfgs_history_size': 10,
+        'project_newton': 0,
     },
 }
 
@@ -122,7 +131,8 @@ def main():
             print_error('  ' + line)
             all_ok = False
 
-    # The two solvers discretise the same problem, so their trajectories should
+    # DiffPhD and the plain baseline discretise the same problem, so their
+    # trajectories should
     # agree to well under the scene scale.
     if all(v[0] == 'OK' for v in results.values()):
         za = results[METHODS[0]][3]
