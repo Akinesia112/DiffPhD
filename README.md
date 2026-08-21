@@ -64,19 +64,15 @@ may work but are untested.
 
 | | |
 |---|---|
-| OS | Linux (x86-64) |
-| GPU | NVIDIA, CUDA 12 capable (verified on RTX 3080 Ti, `sm_86`) |
-| Conda | Miniconda/Anaconda, any prefix |
-| System compiler | `gcc`/`g++` in `/usr/bin` (verified with 7.3.0) |
-| Python | 3.8.3 (from `environment.yml`) |
+| OS | Ubuntu 24.04 LTS (x86-64) |
+| GPU | NVIDIA, CUDA 12 capable |
+| Conda | Miniconda, `conda` 25.9.1, any prefix |
+| System compiler | `gcc`/`g++` 7.3.0 |
+| Python | 3.8.3 |
 | CUDA | nvcc 12.4.131, cuSPARSE 12.3.1.170 (from the conda env) |
 
-Two things are worth stating up front, because both are easy to get wrong:
-
-- **All CUDA libraries come from the conda environment**, not from a system CUDA install.
-- **The C++/CUDA host compiler must be the system `g++`, not conda's.** Conda's
-  `gcc_linux-64 7.3.0` ships a cos6 sysroot (glibc 2.12) that cannot link against the
-  environment's newer `libstdc++`.
+Ubuntu 24.04 defaults to `gcc` 13, which fails at link time. Install 7.3.0 alongside it
+and point `/usr/bin/gcc` at it with `update-alternatives`.
 
 ---
 
@@ -89,19 +85,6 @@ conda env create -f environment.yml
 conda activate diff_phd
 ./install.sh
 ```
-
-That is the whole install. `install.sh` fetches the submodules, builds the vendored
-RealSim dependencies (oneTBB / GKlib / METIS), generates the SWIG bindings, builds the
-CUDA extension, builds the pbrt renderer, and registers the package on the Python path.
-It is idempotent — re-running it skips whatever is already done.
-
-Options:
-
-| flag | effect |
-|---|---|
-| `--no-renderer` | skip pbrt and ffmpeg; use this if you never pass a `vis_folder` |
-| `--jobs N` | parallel build jobs (default: `nproc`) |
-| `--arch NN` | CUDA architecture (default: autodetected from `nvidia-smi`, else `86`) |
 
 After it finishes, `conda activate diff_phd` is the only setup step you ever need —
 no `PYTHONPATH`, no `LD_LIBRARY_PATH`. The CUDA and TBB paths are baked into the
@@ -168,13 +151,13 @@ the installer exists rather than a list of commands in this file.
 
 `python/example/napkin_3d_test.py` is a fast end-to-end check. It drops a
 **heterogeneous** napkin (stiff half / soft half at 0.1x stiffness) onto a spherical
-obstacle and runs the same scene through two solvers, so it exercises the GPU path,
+obstacle and runs the same scene through all three solvers, so it exercises the GPU path,
 the NCP contact solver, heterogeneous materials, the renderer and MP4 export:
 
 ```bash
 conda activate diff_phd
 cd python/example
-python napkin_3d_test.py             # both solvers, with rendering (~5 min)
+python napkin_3d_test.py             # all three solvers, with rendering
 python napkin_3d_test.py --no-vis    # simulation only (~10 s)
 ```
 
@@ -182,8 +165,9 @@ It exits non-zero if either solver fails, and prints a summary like:
 
 ```
 === summary ===
-  pd_eigen_alg_phd         OK         0.994s  lands and bends (max z_std after landing = 0.06671)
-  pd_eigen_pcg_original    OK         0.424s  lands and bends (max z_std after landing = 0.06569)
+  pd_eigen_alg_phd         OK         6.332s  lands and bends (max z_std after landing = 0.06671)
+  pd_eigen_pcg             OK         0.739s  lands and bends (max z_std after landing = 0.06569)
+  pd_eigen_mas_pcg         OK         0.384s  lands and bends (max z_std after landing = 0.06569)
   max |z_alg_phd - z_baseline| = 1.7370e-02
 ```
 
@@ -222,8 +206,8 @@ A solver is selected by name in each script's `methods` tuple.
 | method | what it does |
 |---|---|
 | `pd_eigen_alg_phd` | **DiffPhD.** Stiffness-aware projective assembly, trust-region filtered backward pass, and one persistent sparse-inverse factor shared across the forward solve, the contact Delassus operator and the backward adjoint. |
-| `pd_eigen` and other `pd_eigen_*` names | Baseline Projective Dynamics; any other `pd_eigen`-prefixed name falls through to this path. |
-| `newton_pcg`, `newton_cholesky` | Newton baselines, used as accuracy references. |
+| `pd_eigen_pcg` | The original DiffPD baseline solver: preconditioned conjugate gradient on the prefactorised PD system. |
+| `pd_eigen_mas_pcg` | The same baseline with the multi-level additive Schwarz preconditioner in place of the standard one, enabled by passing `'use_mas': 1` in the options. |
 
 ### Heterogeneous forward simulation (Sec. 5.2)
 
@@ -269,16 +253,41 @@ conditioning.
   several contact make/break transitions, at each of which the active set changes
   discontinuously and the Delassus operator is rebuilt — the regime that separates
   DiffPhD from solvers without contact-aware factor reuse. The stiffness-contrast sweep
-  behind the 10x and 100x rows of the paper is driven by the `contrast_factor` option of
-  `bunny_env`.
+  behind the 10x and 100x rows of the paper is driven by the `contrast_factor`.
 - `routing_tendon_3d.py`, with `render_routing_tendon_3d.py`. Muscle-energy backward pass (energy routing).
 
 **Trajectory optimisation.**
 
 - `torus_3d.py`, with `render_torus_3d.py`. Rolling locomotion.
 
-The robot-manipulation and Real2Sim results (Sec. 5.7) depend on recorded hardware data
-and are not reproducible from a single script.
+### Robot manipulation and Real2Sim (Sec. 5.7)
+
+**Manipulation.** A kinematic arm driven by forward kinematics meets a deformable body
+through the same NCP contact path as the rest of the examples.
+
+- `google_robot_static_mesh_contact.py` — a Google RT-1 arm grasping a heterogeneous
+  ball, hard–soft–hard along the gripper's closing axis. The ball and both fingertips
+  share one `TetDeformable`, and a single `mesh_contact` state force couples the ball
+  surface to both fingertip surfaces *inside* the implicit solve rather than as an
+  external force. The fingertip root faces follow the arm's FK through per-step
+  Dirichlet updates that change only the constraint values, never the DoF set, so the
+  PD prefactorisation survives the whole trajectory. Keyframed as approach, close,
+  lift, open.
+- `ur5_poke_demo.py` — a UR5 arm oscillating its shoulder-lift joint to poke a soft
+  slab with a rigid cylinder. The same two-body structure without a gripper.
+
+**Real2Sim.** Both scripts fit the simulation to a 4D scan of a real deformable dice
+being poked, using gradients from the differentiable backward pass. The ground-truth
+surfaces (Atlas frames 18–53) ship with the repository.
+
+- `dice_material_optimize.py` — recovers the dice's Young's modulus and Poisson's ratio
+  by L-BFGS-B over `(log E, log nu)`, with a bidirectional chamfer loss that both pulls
+  the simulated surface onto the captured one and penalises captured geometry the
+  simulation fails to cover.
+- `dice_xy_optimize.py` — the same pipeline with the material fixed, optimising where
+  the slab sits instead, so the positional and material fits can be separated.
+
+Every mesh and captured frame these need is under `asset/mesh/`.
 
 For the upstream examples and their options, see the original DiffPD repository:
 <https://github.com/mit-gfx/diff_pd_public>.
