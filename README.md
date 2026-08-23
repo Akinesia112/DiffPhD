@@ -1,5 +1,45 @@
 # DiffPhD: A Unified Differentiable Solver for Projective Heterogeneous Materials in Elastodynamics with Contact-Rich GPU-Acceleration
 
+<p align="center">
+  <a href="https://chabu-tseng.github.io/diffphd.github.io/"><b>Project Website</b></a>
+</p>
+
+<p align="center">
+  <b>Accepted to ACM Transactions on Graphics (TOG), Vol. 45, No. 6<br>
+  Proceedings of ACM SIGGRAPH Asia 2026</b>
+</p>
+
+<p align="center">
+  Shih-Yu Lai<sup>1,2,7*</sup>,
+  Sung-Han Tien<sup>1*</sup>,
+  Jui-I Huang<sup>1*</sup>,
+  Yen-Chen Tseng<sup>1</sup>,
+  Yi-Ting Chiu<sup>1</sup>,
+  Siyuan Luo<sup>3</sup>,
+  Ziqiu Zeng<sup>3</sup>,<br>
+  Fan Shi<sup>3</sup>,
+  Peter Yichen Chen<sup>4</sup>,
+  Tiantian Liu<sup>5</sup>,
+  Yu-Lun Liu<sup>6</sup>,
+  Bing-Yu Chen<sup>1†</sup>
+</p>
+
+<p align="center">
+  <sup>1</sup>National Taiwan University &nbsp;·&nbsp;
+  <sup>2</sup>MoonShine Animation Studio &nbsp;·&nbsp;
+  <sup>3</sup>National University of Singapore &nbsp;·&nbsp;
+  <sup>4</sup>The University of British Columbia<br>
+  <sup>5</sup>Independent Researcher &nbsp;·&nbsp;
+  <sup>6</sup>National Yang Ming Chiao Tung University &nbsp;·&nbsp;
+  <sup>7</sup>Aalto University, Finland
+</p>
+
+<p align="center">
+  <sup>*</sup>Equal contribution &nbsp;·&nbsp; <sup>†</sup>Corresponding author
+</p>
+
+---
+
 A GPU-accelerated, differentiable soft-body simulator built on
 [DiffPD: Differentiable Projective Dynamics](https://github.com/mit-gfx/diff_pd_public)
 (ACM TOG / SIGGRAPH 2022). It adds a sparse-inverse ("Algorithm 4" of
