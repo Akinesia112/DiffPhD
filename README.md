@@ -1,7 +1,7 @@
 # DiffPhD: A Unified Differentiable Solver for Projective Heterogeneous Materials in Elastodynamics with Contact-Rich GPU-Acceleration
 
 <p align="center">
-  <a href="https://chabu-tseng.github.io/diffphd.github.io/"><b>Project Website</b></a>
+  <a href="https://chabu-tseng.github.io/diffphd/"><b>Project Website</b></a>
 </p>
 
 <p align="center">
