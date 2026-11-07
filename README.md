@@ -48,6 +48,14 @@ ACM Transactions on Graphics (Proc. ACM SIGGRAPH 2025)) global solve that runs o
 GPU through cuSPARSE, an NCP contact solver with Coulomb friction, and support for
 spatially heterogeneous materials.
 
+## News
+
+[Ilan Beer](https://www.linkedin.com/in/beerilan/) (NVIDIA) integrated **DiffPhD** as a [standalone Newton solver](https://github.com/nvidia-beer/newton-solver-diff-phd#example-controls-and-local-data).
+See it in action during [**Beyond Rigid Bodies × Newton for Robotics**](https://beyondrigidbodies.github.io/) at [ACM SIGGRAPH Asia 2026](https://sa2026.conference-schedule.org/presentation/?id=dfwksp_115&sess=sess208) (**December 3, 2026 · 9:00 AM–5:00 PM MYT (UTC+8)**  
+MR 401/402, Level 4, Kuala Lumpur Convention Centre, Malaysia).
+
+---
+
 ## Disclaimer
 
 The code in this repository is derived from the publicly available publication and
